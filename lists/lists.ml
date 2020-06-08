@@ -99,10 +99,50 @@ struct
         else if Element.lt y x then member x b
         else true
 
+  (* exercise 2.2 *)
+  let member1 x = function
+    | E -> false
+    | T (_, y, _) as set ->
+        let rec aux x z = function
+          | E -> x == z
+          | T (a, y, b) -> if Element.lt x y then aux x z a else aux x y b
+        in
+        aux x y set
+
   let rec insert x = function
     | E -> T (E, x, E)
     | T (a, y, b) as s ->
         if Element.lt x y then T (insert x a, y, b)
         else if Element.lt y x then T (a, y, insert x b)
         else s
+
+  (* exercise 2.3 & 2.4 *)
+  let rec insert2 x s =
+    if member1 x s then s
+    else
+      match s with
+      | E -> T (E, x, E)
+      | T (a, y, b) when Element.lt x y -> T (insert2 x a, y, b)
+      | T (a, y, b) when Element.lt y x -> T (a, y, insert2 x b)
+      | _ -> s
+
+  (* exercise 2.5*)
+  let rec complete x num =
+    match num with
+    | 0 -> E
+    | num ->
+        let subtree = complete x (num - 1) in
+        T (subtree, x, subtree)
+
+  let rec create x n =
+    match n with
+    | 0 -> E
+    | n when (n - 1) mod 2 = 0 ->
+        let subtree = create x ((n - 1) / 2) in
+        T (subtree, x, subtree)
+    | _ ->
+        let half = (n - 1) / 2 in
+        let l = create x half in
+        let r = create x (half + 1) in
+        T (l, x, r)
 end
