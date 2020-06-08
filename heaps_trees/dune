@@ -1,0 +1,3 @@
+(executable
+ (name heaps_trees)
+ (libraries fmt logs))
