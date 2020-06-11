@@ -71,3 +71,66 @@ struct
     in
     aux empty l
 end
+
+module BinomialHeap (Element : ORDERED) : HEAP with module Elem = Element =
+struct
+  module Elem = Element
+
+  type tree = Node of int * Elem.t * tree list
+
+  type heap = tree list
+
+  let empty = []
+
+  let isEmpty s = s = []
+
+  let rank (Node (r, _, _)) = r
+
+  let root (Node (_, x, _)) = x
+
+  let link (Node (r, x1, c1) as t1) (Node (_, x2, c2) as t2) =
+    if Elem.leq x1 x2 then Node (r + 1, x1, t2 :: c1)
+    else Node (r + 1, x2, t1 :: c2)
+
+  let rec ins_tree t = function
+    | [] -> [ t ]
+    | t' :: ts' as ts ->
+        if rank t < rank t' then t :: ts else ins_tree (link t t') ts'
+
+  let insert x ts = ins_tree (Node (0, x, [])) ts
+
+  let rec merge ts1 ts2 =
+    match (ts1, ts2) with
+    | [], ts2 -> ts2
+    | ts1, [] -> ts1
+    | t1 :: ts1', t2 :: ts2' ->
+        if rank t1 < rank t2 then t1 :: merge ts1' ts2
+        else if rank t2 < rank t1 then t2 :: merge ts1 ts2'
+        else ins_tree (link t1 t2) (merge ts1' ts2')
+
+  let rec remove_min_tree t =
+    match t with
+    | [] -> raise Empty
+    | [ t ] -> (t, [])
+    | t :: ts ->
+        let t', ts' = remove_min_tree ts in
+        if Elem.leq (root t) (root t') then (t, ts) else (t', t :: ts')
+
+  let findMin ts =
+    let t, _ = remove_min_tree ts in
+    root t
+
+  let deleteMin ts =
+    let Node (_, _, ts1), ts2 = remove_min_tree ts in
+    merge (List.rev ts1) ts2
+
+  (* exercise 3.5 *)
+  let findMin' t =
+    let rec find min = function
+      | [] -> min
+      | t :: ts ->
+          let root = root t in
+          if Elem.leq root min then find root ts else find min ts
+    in
+    match t with [] -> raise Empty | t :: ts -> find (root t) ts
+end
