@@ -1,0 +1,3 @@
+(executable
+ (name streams)
+ (libraries fmt logs))

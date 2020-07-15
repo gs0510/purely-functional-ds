@@ -134,3 +134,63 @@ struct
     in
     match t with [] -> raise Empty | t :: ts -> find (root t) ts
 end
+
+module type SET = sig
+  type elem
+
+  type set
+
+  val empty : set
+
+  val insert : elem -> set -> set
+
+  val member : elem -> set -> bool
+end
+
+module RedBlackTree (Element : ORDERED) : SET with type elem = Element.t =
+struct
+  type elem = Element.t
+
+  type color = R | B
+
+  type tree = E | T of color * tree * elem * tree
+
+  type set = tree
+
+  let empty = E
+
+  let rec member x = function
+    | E -> false
+    | T (_, a, y, b) ->
+        if Element.lt x y then member x a
+        else if Element.lt y x then member x b
+        else true
+
+  let balance = function
+    | B, T (R, T (R, a, x, b), y, c), z, d
+    | B, T (R, a, x, T (R, b, y, c)), z, d
+    | B, a, x, T (R, T (R, b, y, c), z, d)
+    | B, a, x, T (R, b, y, T (R, c, z, d)) ->
+        T (R, T (B, a, x, b), y, T (B, c, z, d))
+    | a, b, c, d -> T (a, b, c, d)
+
+  let insert x s =
+    let rec ins = function
+      | E -> T (R, E, x, E)
+      | T (color, a, y, b) as s ->
+          if Element.lt x y then balance (color, ins a, y, b)
+          else if Element.lt y x then balance (color, a, y, ins b)
+          else s
+    in
+    match ins s with T (_, a, y, b) -> T (B, a, y, b) | _ -> raise Empty
+
+  (* exercise 3.9 *)
+  let fromOrdList l =
+    let rec aux ret = function
+      | [] -> ret
+      | [ x ] -> insert x ret
+      | x1 :: (x2 :: tl2 as tl) ->
+          if x1 == x2 then aux ret tl else aux (insert x2 (insert x1 ret)) tl2
+    in
+    aux empty l
+end
